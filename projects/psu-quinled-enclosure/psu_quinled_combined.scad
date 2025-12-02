@@ -299,18 +299,10 @@ module lid() {
     rail_actual_depth = rail_depth - rail_tolerance;
     rail_actual_height = rail_height - rail_tolerance;
 
-    // Lid plate dimensions - trimmed to not hit walls when sliding
-    // Front edge at X = wall - rail_depth (aligns with groove)
-    // Back edge at X = outer_length - wall + rail_depth
-    lid_start_x = wall - rail_depth;
-    lid_end_x = outer_length - wall + rail_depth;
-    lid_length = lid_end_x - lid_start_x;
-
     difference() {
         union() {
-            // Main lid plate (positioned to align with grooves)
-            translate([lid_start_x, 0, 0])
-                cube([lid_length, outer_width, wall]);
+            // Main lid plate - full outer dimensions
+            cube([outer_length, outer_width, wall]);
 
             // Front rail (projects DOWN into front wall groove)
             translate([wall - rail_actual_depth, wall, -rail_actual_height])
@@ -322,15 +314,15 @@ module lid() {
         }
 
         // Corner chamfers on lid plate
-        translate([lid_start_x, 0, -0.1])
+        translate([0, 0, -0.1])
             corner_chamfer(chamfer_size, wall + 0.2);
-        translate([lid_start_x, outer_width, -0.1])
+        translate([0, outer_width, -0.1])
             rotate([0, 0, -90])
                 corner_chamfer(chamfer_size, wall + 0.2);
-        translate([lid_end_x, 0, -0.1])
+        translate([outer_length, 0, -0.1])
             rotate([0, 0, 90])
                 corner_chamfer(chamfer_size, wall + 0.2);
-        translate([lid_end_x, outer_width, -0.1])
+        translate([outer_length, outer_width, -0.1])
             rotate([0, 0, 180])
                 corner_chamfer(chamfer_size, wall + 0.2);
 
@@ -351,10 +343,10 @@ module lid() {
             }
         }
 
-        // QuinLED ventilation holes
+        // QuinLED ventilation holes - adjusted to stay within lid bounds
         for (i = [-2:2]) {
-            for (j = [-3:3]) {
-                translate([quinled_center_x + i * 10, quinled_center_y + j * 12, -1])
+            for (j = [-2:2]) {
+                translate([quinled_center_x + i * 10, quinled_center_y + j * 10, -1])
                     cylinder(d=4, h=wall + 2);
             }
         }
@@ -364,8 +356,7 @@ module lid() {
 // Lid in print orientation (rails facing up for no supports)
 module lid_for_print() {
     // Flip upside down so rails point up, shift to keep on build plate
-    lid_start_x = wall - rail_depth;
-    translate([-lid_start_x, outer_width, wall])
+    translate([0, outer_width, wall])
         rotate([180, 0, 0])
             lid();
 }
