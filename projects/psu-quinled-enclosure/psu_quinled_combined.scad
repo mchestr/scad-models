@@ -11,11 +11,10 @@ psu_width = 115;
 psu_height = 50;
 
 /* [PSU Mounting Holes] */
-psu_hole_back_offset = 30;
-psu_hole_front_offset = 32;
-psu_hole_side_offset = 31;
-psu_screw_dia = 3;  // M3 screws from bottom
-psu_screw_head_dia = 6;  // M3 screw head
+psu_hole_spacing_length = 150;  // Center-to-center distance lengthwise
+psu_hole_spacing_width = 50;    // Center-to-center distance widthwise
+psu_screw_dia = 4;  // M4 screws from bottom
+psu_screw_head_dia = 8;  // M4 screw head
 
 /* [PSU Fan] */
 fan_diameter = 60;
@@ -114,12 +113,14 @@ module corner_screw_boss(size, screw_d, height, corner) {
 
 // Main enclosure body
 module enclosure_body() {
-    // PSU mount positions
+    // PSU mount positions (centered on PSU with specified center-to-center spacing)
+    psu_center_x = wall + clearance + psu_length / 2;
+    psu_center_y = psu_area_start_y + psu_width / 2;
     psu_mounts = [
-        [wall + clearance + psu_hole_back_offset, psu_area_start_y + psu_hole_side_offset],
-        [wall + clearance + psu_hole_back_offset, psu_area_start_y + psu_width - psu_hole_side_offset],
-        [outer_length - wall - clearance - psu_hole_front_offset, psu_area_start_y + psu_hole_side_offset],
-        [outer_length - wall - clearance - psu_hole_front_offset, psu_area_start_y + psu_width - psu_hole_side_offset]
+        [psu_center_x - psu_hole_spacing_length / 2, psu_center_y - psu_hole_spacing_width / 2],
+        [psu_center_x - psu_hole_spacing_length / 2, psu_center_y + psu_hole_spacing_width / 2],
+        [psu_center_x + psu_hole_spacing_length / 2, psu_center_y - psu_hole_spacing_width / 2],
+        [psu_center_x + psu_hole_spacing_length / 2, psu_center_y + psu_hole_spacing_width / 2]
     ];
 
     difference() {
