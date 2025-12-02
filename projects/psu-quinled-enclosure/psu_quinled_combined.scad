@@ -19,8 +19,8 @@ psu_screw_head_dia = 8;  // M4 screw head
 
 /* [PSU Fan] */
 fan_diameter = 60;
-fan_from_front = 75;   // X offset from front of PSU
-fan_from_left = 40;    // Y offset from left edge of PSU
+fan_from_back = 75;    // X offset from back of PSU
+fan_from_right = 40;   // Y offset from right edge of PSU
 
 /* [QuinLED Board] */
 quinled_length = 100;
@@ -290,9 +290,9 @@ module enclosure_body() {
 // Sliding lid module
 // Lid slides in from Y=max (right side) with rails engaging grooves in front/back walls
 module lid() {
-    // Fan position calculated from front of PSU
-    fan_x = psu_area_start_x + fan_from_front;
-    fan_y = psu_area_start_y + fan_from_left;
+    // Fan position calculated from back and right of PSU
+    fan_x = psu_area_start_x + psu_length - fan_from_back;
+    fan_y = psu_area_start_y + psu_width - fan_from_right;
     quinled_center_x = quinled_board_x + quinled_length/2;
     quinled_center_y = quinled_board_y + quinled_width/2;
 
