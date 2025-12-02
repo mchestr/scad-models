@@ -2,8 +2,8 @@
 // Prints separately, snaps into cable holes
 
 /* [Grommet Size] */
-hole_dia = 8;          // Diameter of hole in enclosure
-cable_dia = 5;         // Diameter of cable passing through
+hole_dia = 10;         // Diameter of hole in enclosure
+cable_dia = 7;         // Diameter of cable passing through
 wall_thickness = 4;    // Enclosure wall thickness
 
 /* [Grommet Design] */

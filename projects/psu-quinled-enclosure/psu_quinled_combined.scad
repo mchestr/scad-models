@@ -51,7 +51,7 @@ divider_slit_height = 25; // Depth of U-slit from top
 antenna_dia = 6;
 led_slit_width = 80;
 led_slit_height = 15;
-psu_power_hole_dia = 8;  // PSU AC power cable hole
+psu_power_hole_dia = 10;  // PSU AC power cable hole (fits grommet for 7mm cable)
 
 /* [Ventilation] */
 slot_width = 3;
