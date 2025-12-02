@@ -129,19 +129,6 @@ module enclosure_body() {
             cube([divider_slit_width, gap_between + 2, divider_slit_height + 1]);
     }
 
-    // Internal fillets where walls meet floor
-    floor_fillet = 2;
-    translate([wall, wall, wall])
-        internal_fillet(inner_width, floor_fillet);
-    translate([outer_length - wall, wall + inner_width, wall])
-        rotate([0, 0, 180])
-            internal_fillet(inner_width, floor_fillet);
-    translate([wall + inner_length, wall, wall])
-        rotate([0, 0, -90])
-            internal_fillet(inner_length, floor_fillet);
-    translate([wall, outer_width - wall, wall])
-        rotate([0, 0, 90])
-            internal_fillet(inner_length, floor_fillet);
 
     // End stop for sliding lid (left side, Y=0)
     translate([wall - rail_depth, wall - 1.5, outer_height - rail_height])
