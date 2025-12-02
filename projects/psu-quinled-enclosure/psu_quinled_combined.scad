@@ -32,7 +32,8 @@ quinled_standoff_dia = 6;
 quinled_standoff_height = 6;
 
 /* [Enclosure Settings] */
-clearance = 8;  // Clearance around PSU (also sets PSU-side boss size)
+clearance = 5;  // General clearance around components
+boss_clearance = 14;  // Extra clearance on PSU side (Y=0) for full-size corner bosses
 terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
 wall = 3;
 lid_tolerance = 0.3;
@@ -65,16 +66,17 @@ snap_depth = 1.5;
 
 // Calculated dimensions
 quinled_section_width = quinled_width + clearance * 2;
-inner_length = psu_length + clearance * 2 + terminal_clearance;  // Extra space at back for terminals
-inner_width = psu_width + clearance * 2 + gap_between + quinled_section_width;
+inner_length = psu_length + clearance + terminal_clearance + boss_clearance;  // boss_clearance at front, terminal at back
+inner_width = psu_width + boss_clearance + clearance + gap_between + quinled_section_width;  // boss_clearance on PSU side (Y=0)
 inner_height = psu_height + clearance;
 outer_length = inner_length + wall * 2;
 outer_width = inner_width + wall * 2;
 outer_height = inner_height + wall;
 
-// Area positions
-psu_area_start_y = wall + clearance;
-psu_area_end_y = wall + clearance + psu_width;
+// Area positions (PSU side has extra clearance for corner bosses)
+psu_area_start_x = wall + boss_clearance;  // Extra clearance at front for boss
+psu_area_start_y = wall + boss_clearance;  // Extra clearance on left side for bosses
+psu_area_end_y = psu_area_start_y + psu_width;
 quinled_area_start_y = psu_area_end_y + gap_between;
 quinled_area_center_y = quinled_area_start_y + quinled_section_width / 2;
 
@@ -85,12 +87,12 @@ quinled_board_y = quinled_area_start_y + clearance;
 // Corner boss size for lid screws
 corner_boss_size = 12;
 
-// Lid screw positions (PSU-side bosses are sized to clearance)
+// Lid screw positions (all corners now have full-size bosses)
 lid_screw_positions = [
-    [wall + clearance/2, wall + clearance/2],  // Front-left (PSU side)
-    [outer_length - wall - clearance/2, wall + clearance/2],  // Back-left (PSU side)
-    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],  // Front-right (QuinLED side)
-    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]  // Back-right (QuinLED side)
+    [wall + corner_boss_size/2, wall + corner_boss_size/2],  // Front-left
+    [outer_length - wall - corner_boss_size/2, wall + corner_boss_size/2],  // Back-left
+    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],  // Front-right
+    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]  // Back-right
 ];
 
 // Standoff module (cylindrical with base fillet)
@@ -187,7 +189,7 @@ module cable_hole_with_relief(dia, wall_thickness, collar_height=3, collar_width
 // Main enclosure body
 module enclosure_body() {
     // PSU mount positions (centered on PSU with specified center-to-center spacing)
-    psu_center_x = wall + clearance + psu_length / 2;
+    psu_center_x = psu_area_start_x + psu_length / 2;
     psu_center_y = psu_area_start_y + psu_width / 2;
     psu_mounts = [
         [psu_center_x - psu_hole_spacing_length / 2, psu_center_y - psu_hole_spacing_width / 2],
@@ -367,32 +369,17 @@ module enclosure_body() {
                 cube([inner_length - 2, inner_width - 2, 3]);
         }
 
-    // Square corner screw bosses for lid
-    // PSU-side bosses must fit entirely within clearance zone (not intrude into PSU area)
-    // PSU area starts at X=wall+clearance, Y=wall+clearance
-    psu_boss_size = clearance;  // Boss can only be as wide as the clearance
-
-    // Front-left corner (small boss in corner, outside PSU footprint)
+    // Square corner screw bosses for lid (all full-size now that we have proper clearance)
+    // Front-left corner
     translate([wall, wall, wall])
-        difference() {
-            cube([psu_boss_size, psu_boss_size, inner_height]);
-            translate([psu_boss_size/2, psu_boss_size/2, -0.5])
-                cylinder(d=lid_screw_dia, h=inner_height + 1);
-        }
-
-    // Front-right corner (QuinLED side - full square boss)
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
+    // Front-right corner
     translate([wall, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 1);
-
-    // Back-left corner (small boss in corner, outside PSU footprint)
-    translate([outer_length - wall - psu_boss_size, wall, wall])
-        difference() {
-            cube([psu_boss_size, psu_boss_size, inner_height]);
-            translate([psu_boss_size/2, psu_boss_size/2, -0.5])
-                cylinder(d=lid_screw_dia, h=inner_height + 1);
-        }
-
-    // Back-right corner (QuinLED side - full square boss)
+    // Back-left corner
+    translate([outer_length - wall - corner_boss_size, wall, wall])
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
+    // Back-right corner
     translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
 
@@ -420,7 +407,7 @@ module enclosure_body() {
 module lid() {
     lid_inner_length = inner_length - lid_tolerance * 2;
     lid_inner_width = inner_width - lid_tolerance * 2;
-    fan_x = wall + clearance + fan_from_front;
+    fan_x = psu_area_start_x + fan_from_front;
     fan_y = psu_area_start_y + fan_from_left;
     quinled_center_x = quinled_board_x + quinled_length/2;
     quinled_center_y = quinled_board_y + quinled_width/2;
