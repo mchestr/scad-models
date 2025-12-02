@@ -85,12 +85,13 @@ quinled_board_y = quinled_area_start_y + clearance;
 // Corner boss size for lid screws
 corner_boss_size = 12;
 
-// Lid screw positions (center of corner bosses)
+// Lid screw positions (PSU-side screws are offset to outer corner of L-boss)
+psu_boss_leg_calc = clearance + 2;  // Must match psu_boss_leg in enclosure_body
 lid_screw_positions = [
-    [wall + corner_boss_size/2, wall + corner_boss_size/2],
-    [outer_length - wall - corner_boss_size/2, wall + corner_boss_size/2],
-    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],
-    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]
+    [wall + psu_boss_leg_calc/2, wall + psu_boss_leg_calc/2],  // Front-left (L-shaped)
+    [outer_length - wall - psu_boss_leg_calc/2, wall + psu_boss_leg_calc/2],  // Back-left (L-shaped)
+    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],  // Front-right (square)
+    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]  // Back-right (square)
 ];
 
 // Standoff module (cylindrical with base fillet)
@@ -368,27 +369,43 @@ module enclosure_body() {
         }
 
     // Square corner screw bosses for lid
-    // Front-left corner (with PSU clearance notch)
-    psu_notch_size = corner_boss_size - clearance;  // How much boss intrudes into PSU area
+    // PSU-side bosses are L-shaped to avoid PSU while keeping screw hole
+    psu_boss_leg = clearance + 2;  // Width of L-legs (enough for wall connection)
+
+    // Front-left corner (L-shaped for PSU clearance)
     translate([wall, wall, wall])
         difference() {
-            corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
-            // Notch out the corner that would hit the PSU
-            translate([clearance, clearance, -0.1])
-                cube([psu_notch_size + 0.1, psu_notch_size + 0.1, inner_height + 0.2]);
+            union() {
+                // Leg along front wall (X direction)
+                cube([corner_boss_size, psu_boss_leg, inner_height]);
+                // Leg along left wall (Y direction)
+                cube([psu_boss_leg, corner_boss_size, inner_height]);
+            }
+            // Screw hole in the outer corner (away from PSU)
+            translate([psu_boss_leg/2, psu_boss_leg/2, -0.5])
+                cylinder(d=lid_screw_dia, h=inner_height + 1);
         }
-    // Front-right corner (QuinLED side - no notch needed)
+
+    // Front-right corner (QuinLED side - full square boss)
     translate([wall, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 1);
-    // Back-left corner (with PSU clearance notch)
+
+    // Back-left corner (L-shaped for PSU clearance)
     translate([outer_length - wall - corner_boss_size, wall, wall])
         difference() {
-            corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
-            // Notch out the corner that would hit the PSU area
-            translate([-0.1, clearance, -0.1])
-                cube([psu_notch_size + 0.1, psu_notch_size + 0.1, inner_height + 0.2]);
+            union() {
+                // Leg along back wall (X direction)
+                translate([corner_boss_size - psu_boss_leg, 0, 0])
+                    cube([psu_boss_leg, corner_boss_size, inner_height]);
+                // Leg along left wall (Y direction)
+                cube([corner_boss_size, psu_boss_leg, inner_height]);
+            }
+            // Screw hole in the outer corner (away from PSU)
+            translate([corner_boss_size - psu_boss_leg/2, psu_boss_leg/2, -0.5])
+                cylinder(d=lid_screw_dia, h=inner_height + 1);
         }
-    // Back-right corner (QuinLED side - no notch needed)
+
+    // Back-right corner (QuinLED side - full square boss)
     translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
 
