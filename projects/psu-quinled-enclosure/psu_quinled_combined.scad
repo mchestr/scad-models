@@ -33,6 +33,7 @@ quinled_standoff_height = 6;
 
 /* [Enclosure Settings] */
 clearance = 4;
+terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
 wall = 3;
 lid_tolerance = 0.3;
 chamfer_size = 3;  // Corner chamfer size
@@ -64,7 +65,7 @@ snap_depth = 1.5;
 
 // Calculated dimensions
 quinled_section_width = quinled_width + clearance * 2;
-inner_length = psu_length + clearance * 2;
+inner_length = psu_length + clearance * 2 + terminal_clearance;  // Extra space at back for terminals
 inner_width = psu_width + clearance * 2 + gap_between + quinled_section_width;
 inner_height = psu_height + clearance;
 outer_length = inner_length + wall * 2;
@@ -367,16 +368,27 @@ module enclosure_body() {
         }
 
     // Square corner screw bosses for lid
-    // Front-left corner
+    // Front-left corner (with PSU clearance notch)
+    psu_notch_size = corner_boss_size - clearance;  // How much boss intrudes into PSU area
     translate([wall, wall, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
-    // Front-right corner
+        difference() {
+            corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
+            // Notch out the corner that would hit the PSU
+            translate([clearance, clearance, -0.1])
+                cube([psu_notch_size + 0.1, psu_notch_size + 0.1, inner_height + 0.2]);
+        }
+    // Front-right corner (QuinLED side - no notch needed)
     translate([wall, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 1);
-    // Back-left corner
+    // Back-left corner (with PSU clearance notch)
     translate([outer_length - wall - corner_boss_size, wall, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
-    // Back-right corner
+        difference() {
+            corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
+            // Notch out the corner that would hit the PSU area
+            translate([-0.1, clearance, -0.1])
+                cube([psu_notch_size + 0.1, psu_notch_size + 0.1, inner_height + 0.2]);
+        }
+    // Back-right corner (QuinLED side - no notch needed)
     translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
 
