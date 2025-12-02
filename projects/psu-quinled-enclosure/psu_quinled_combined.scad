@@ -33,13 +33,13 @@ quinled_standoff_height = 6;
 /* [Enclosure Settings] */
 clearance = 5;  // General clearance around components
 terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
-wall = 3;
+wall = 5;           // Increased for stronger lid groove walls
 lid_tolerance = 0.3;
 chamfer_size = 3;  // Corner chamfer size
 
 /* [Sliding Lid] */
 rail_height = 4;    // Height of the rail/groove
-rail_depth = 2.5;   // How far rail projects into groove
+rail_depth = 2.5;   // How far rail projects into groove (leaves 2.5mm wall)
 rail_tolerance = 0.2;  // Sliding clearance
 
 /* [Layout - Side by Side] */
