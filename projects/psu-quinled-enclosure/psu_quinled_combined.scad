@@ -146,12 +146,14 @@ module enclosure_body() {
             cube([inner_length, inner_width, inner_height + 1]);
 
         // Lid sliding grooves on front wall (X=0, inner face)
-        translate([wall - rail_depth, wall - 0.1, rail_z])
-            cube([rail_depth + 0.1, inner_width + 0.2, rail_height + 1]);
+        // Groove extends from left wall to right edge (open for lid entry)
+        translate([wall - rail_depth, wall, rail_z])
+            cube([rail_depth + 0.1, inner_width + wall + 1, rail_height + 1]);
 
         // Lid sliding grooves on back wall (X=max, inner face)
-        translate([outer_length - wall - 0.1, wall - 0.1, rail_z])
-            cube([rail_depth + 0.1, inner_width + 0.2, rail_height + 1]);
+        // Groove extends from left wall to right edge (open for lid entry)
+        translate([outer_length - wall - 0.1, wall, rail_z])
+            cube([rail_depth + 0.1, inner_width + wall + 1, rail_height + 1]);
 
         // Corner chamfers
         // Front-left (X=0, Y=0)
@@ -286,6 +288,7 @@ module enclosure_body() {
 }
 
 // Sliding lid module
+// Lid slides in from Y=max (right side) with rails engaging grooves in front/back walls
 module lid() {
     fan_x = psu_area_start_x + fan_from_front;
     fan_y = psu_area_start_y + fan_from_left;
@@ -296,30 +299,38 @@ module lid() {
     rail_actual_depth = rail_depth - rail_tolerance;
     rail_actual_height = rail_height - rail_tolerance;
 
+    // Lid plate dimensions - trimmed to not hit walls when sliding
+    // Front edge at X = wall - rail_depth (aligns with groove)
+    // Back edge at X = outer_length - wall + rail_depth
+    lid_start_x = wall - rail_depth;
+    lid_end_x = outer_length - wall + rail_depth;
+    lid_length = lid_end_x - lid_start_x;
+
     difference() {
         union() {
-            // Main lid plate
-            cube([outer_length, outer_width, wall]);
+            // Main lid plate (positioned to align with grooves)
+            translate([lid_start_x, 0, 0])
+                cube([lid_length, outer_width, wall]);
 
-            // Front rail (slides into front wall groove)
-            translate([wall - rail_actual_depth, wall, wall])
+            // Front rail (projects DOWN into front wall groove)
+            translate([wall - rail_actual_depth, wall, -rail_actual_height])
                 cube([rail_actual_depth, inner_width, rail_actual_height]);
 
-            // Back rail (slides into back wall groove)
-            translate([outer_length - wall, wall, wall])
+            // Back rail (projects DOWN into back wall groove)
+            translate([outer_length - wall, wall, -rail_actual_height])
                 cube([rail_actual_depth, inner_width, rail_actual_height]);
         }
 
-        // Corner chamfers
-        translate([0, 0, -0.1])
+        // Corner chamfers on lid plate
+        translate([lid_start_x, 0, -0.1])
             corner_chamfer(chamfer_size, wall + 0.2);
-        translate([0, outer_width, -0.1])
+        translate([lid_start_x, outer_width, -0.1])
             rotate([0, 0, -90])
                 corner_chamfer(chamfer_size, wall + 0.2);
-        translate([outer_length, 0, -0.1])
+        translate([lid_end_x, 0, -0.1])
             rotate([0, 0, 90])
                 corner_chamfer(chamfer_size, wall + 0.2);
-        translate([outer_length, outer_width, -0.1])
+        translate([lid_end_x, outer_width, -0.1])
             rotate([0, 0, 180])
                 corner_chamfer(chamfer_size, wall + 0.2);
 
@@ -352,14 +363,18 @@ module lid() {
 
 // Lid in print orientation (rails facing up for no supports)
 module lid_for_print() {
-    translate([0, outer_width, wall + rail_height - rail_tolerance])
+    // Flip upside down so rails point up, shift to keep on build plate
+    lid_start_x = wall - rail_depth;
+    translate([-lid_start_x, outer_width, wall])
         rotate([180, 0, 0])
             lid();
 }
 
 // Lid positioned for assembly view
 module lid_assembled() {
-    translate([0, 0, outer_height - wall])
+    // Position so bottom of lid plate sits on top of walls
+    // Rails project down into grooves
+    translate([0, 0, outer_height])
         lid();
 }
 
