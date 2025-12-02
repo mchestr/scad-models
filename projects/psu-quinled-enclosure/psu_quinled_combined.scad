@@ -35,6 +35,7 @@ quinled_standoff_height = 6;
 clearance = 4;
 wall = 3;
 lid_tolerance = 0.3;
+chamfer_size = 3;  // Corner chamfer size
 
 /* [Layout - Side by Side] */
 gap_between = 5;  // Gap between PSU and QuinLED section
@@ -111,6 +112,12 @@ module corner_screw_boss(size, screw_d, height, corner) {
     }
 }
 
+// Vertical corner chamfer cut (triangular prism)
+module corner_chamfer(size, height) {
+    linear_extrude(height)
+        polygon([[0, 0], [size, 0], [0, size]]);
+}
+
 // Main enclosure body
 module enclosure_body() {
     // PSU mount positions (centered on PSU with specified center-to-center spacing)
@@ -130,6 +137,24 @@ module enclosure_body() {
         // Inner cavity
         translate([wall, wall, wall])
             cube([inner_length, inner_width, inner_height + 1]);
+
+        // Corner chamfers
+        // Front-left (X=0, Y=0)
+        translate([0, 0, -0.1])
+            rotate([0, 0, 0])
+                corner_chamfer(chamfer_size, outer_height + 0.2);
+        // Front-right (X=0, Y=max)
+        translate([0, outer_width, -0.1])
+            rotate([0, 0, -90])
+                corner_chamfer(chamfer_size, outer_height + 0.2);
+        // Back-left (X=max, Y=0)
+        translate([outer_length, 0, -0.1])
+            rotate([0, 0, 90])
+                corner_chamfer(chamfer_size, outer_height + 0.2);
+        // Back-right (X=max, Y=max)
+        translate([outer_length, outer_width, -0.1])
+            rotate([0, 0, 180])
+                corner_chamfer(chamfer_size, outer_height + 0.2);
 
         // PSU mounting holes through floor with tapered countersink
         for (pos = psu_mounts) {
@@ -247,6 +272,19 @@ module lid() {
                     cylinder(d=lid_screw_head_dia + 2, h=wall);
             }
         }
+
+        // Corner chamfers
+        translate([0, 0, -0.1])
+            corner_chamfer(chamfer_size, wall + 0.2);
+        translate([0, outer_width, -0.1])
+            rotate([0, 0, -90])
+                corner_chamfer(chamfer_size, wall + 0.2);
+        translate([outer_length, 0, -0.1])
+            rotate([0, 0, 90])
+                corner_chamfer(chamfer_size, wall + 0.2);
+        translate([outer_length, outer_width, -0.1])
+            rotate([0, 0, 180])
+                corner_chamfer(chamfer_size, wall + 0.2);
 
         // Fan cutout
         translate([fan_x, fan_y, -1])
