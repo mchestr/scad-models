@@ -33,7 +33,7 @@ quinled_standoff_height = 6;
 
 /* [Enclosure Settings] */
 clearance = 5;  // General clearance around components
-boss_clearance = 14;  // Extra clearance on PSU side (Y=0) for full-size corner bosses
+boss_clearance = 12;  // Extra clearance on PSU side (Y=0) for corner bosses
 terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
 wall = 3;
 lid_tolerance = 0.3;
@@ -85,7 +85,7 @@ quinled_board_x = outer_length - wall - 20 - quinled_length;
 quinled_board_y = quinled_area_start_y + clearance;
 
 // Corner boss size for lid screws
-corner_boss_size = 12;
+corner_boss_size = 10;
 
 // Lid screw positions (all corners now have full-size bosses)
 lid_screw_positions = [
