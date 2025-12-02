@@ -263,20 +263,6 @@ module enclosure_body() {
             rotate([-90, 0, 0])
                 cylinder(d=antenna_dia, h=wall + 2);
 
-        // Rubber feet recesses (for adhesive bumper feet)
-        feet_dia = 12;      // Diameter of rubber foot
-        feet_depth = 1.5;   // Recess depth
-        feet_inset = 20;    // Distance from edges
-        feet_positions = [
-            [feet_inset, feet_inset],
-            [outer_length - feet_inset, feet_inset],
-            [feet_inset, outer_width - feet_inset],
-            [outer_length - feet_inset, outer_width - feet_inset]
-        ];
-        for (pos = feet_positions) {
-            translate([pos[0], pos[1], -0.1])
-                cylinder(d=feet_dia, h=feet_depth + 0.1);
-        }
     }
 
 
