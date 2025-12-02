@@ -133,8 +133,8 @@ module corner_screw_boss(size, screw_d, height, corner, fillet_r=2) {
                 rotate([0, 0, -90]) internal_fillet(size, fillet_r);
             }
         }
-        // Screw hole in center of boss
-        translate([size/2, size/2, -0.5])
+        // Screw hole in center of boss (starts above floor, doesn't cut through)
+        translate([size/2, size/2, 0])
             cylinder(d=screw_d, h=height + 1);
     }
 }
