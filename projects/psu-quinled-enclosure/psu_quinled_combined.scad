@@ -280,8 +280,8 @@ module enclosure_body() {
                         cylinder(r=slit_corner_r, h=wall + 2);
             }
 
-        // RIGHT SIDE (Y=max): Antenna hole (towards back corner, clear of LED slit)
-        translate([outer_length - wall - corner_boss_size - 10, outer_width - wall - 1, wall + quinled_standoff_height + 15])
+        // RIGHT SIDE (Y=max): Antenna hole (towards back corner, higher up)
+        translate([outer_length - wall - corner_boss_size - 10, outer_width - wall - 1, outer_height - 15])
             rotate([-90, 0, 0])
                 cylinder(d=antenna_dia, h=wall + 2);
 
@@ -313,39 +313,6 @@ module enclosure_body() {
         translate([pos[0], pos[1], wall])
             standoff(quinled_standoff_dia, quinled_hole_dia, quinled_standoff_height);
     }
-
-    // Strain relief collars for cable holes
-    strain_collar_height = 4;
-    strain_collar_width = 3;
-    zip_groove_depth = 1.5;
-
-    // PSU power cable strain relief (front wall, external)
-    translate([0, psu_area_start_y + psu_width/2, wall + 15])
-        rotate([0, -90, 0])
-            difference() {
-                cylinder(d=psu_power_hole_dia + strain_collar_width*2, h=strain_collar_height);
-                translate([0, 0, -0.1])
-                    cylinder(d=psu_power_hole_dia, h=strain_collar_height + 0.2);
-                // Zip-tie groove
-                translate([0, 0, strain_collar_height/2])
-                    rotate_extrude()
-                        translate([psu_power_hole_dia/2 + strain_collar_width - zip_groove_depth, 0, 0])
-                            circle(d=zip_groove_depth * 1.5);
-            }
-
-    // Antenna cable strain relief (right side, external)
-    translate([outer_length - wall - corner_boss_size - 10, outer_width, wall + quinled_standoff_height + 15])
-        rotate([-90, 0, 0])
-            difference() {
-                cylinder(d=antenna_dia + strain_collar_width*2, h=strain_collar_height);
-                translate([0, 0, -0.1])
-                    cylinder(d=antenna_dia, h=strain_collar_height + 0.2);
-                // Zip-tie groove
-                translate([0, 0, strain_collar_height/2])
-                    rotate_extrude()
-                        translate([antenna_dia/2 + strain_collar_width - zip_groove_depth, 0, 0])
-                            circle(d=zip_groove_depth * 1.5);
-            }
 
     // Divider wall with U-shaped cable slits
     divider_height = inner_height * 0.6;
