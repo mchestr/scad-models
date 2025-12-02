@@ -17,10 +17,8 @@ psu_hole_spacing_width = 50;    // Center-to-center distance widthwise
 psu_screw_dia = 4;  // M4 screws from bottom
 psu_screw_head_dia = 8;  // M4 screw head
 
-/* [PSU Fan] */
-fan_diameter = 60;
-fan_from_back = 75;    // X offset from back of PSU
-fan_from_right = 40;   // Y offset from right edge of PSU
+/* [Ventilation] */
+vent_coverage = 0.8;   // Percentage of lid width covered by honeycomb
 
 /* [QuinLED Board] */
 quinled_length = 100;
@@ -290,15 +288,19 @@ module enclosure_body() {
 // Sliding lid module
 // Lid slides in from Y=max (right side) with rails engaging grooves in front/back walls
 module lid() {
-    // Fan position calculated from back and right of PSU
-    fan_x = psu_area_start_x + psu_length - fan_from_back;
-    fan_y = psu_area_start_y + psu_width - fan_from_right;
-    quinled_center_x = quinled_board_x + quinled_length/2;
-    quinled_center_y = quinled_board_y + quinled_width/2;
-
     // Rail dimensions (slightly smaller than groove for clearance)
     rail_actual_depth = rail_depth - rail_tolerance;
     rail_actual_height = rail_height - rail_tolerance;
+
+    // Honeycomb vent area - centered
+    vent_width = outer_width * vent_coverage;
+    vent_length = outer_length * 0.7;  // 70% of length
+    vent_start_x = (outer_length - vent_length) / 2;
+    vent_start_y = (outer_width - vent_width) / 2;
+
+    // Honeycomb parameters
+    hex_hole_dia = 8;
+    hex_spacing = 11;
 
     difference() {
         union() {
@@ -327,28 +329,23 @@ module lid() {
             rotate([0, 0, 180])
                 corner_chamfer(chamfer_size, wall + 0.2);
 
-        // Fan grille - hexagonal hole pattern (honeycomb)
-        hex_hole_dia = 6;
-        hex_spacing = 8;
-        hex_rows = floor(fan_diameter / hex_spacing);
-        for (row = [-hex_rows/2 : hex_rows/2]) {
-            row_offset = (abs(row) % 2) * hex_spacing / 2;
-            for (col = [-hex_rows/2 : hex_rows/2]) {
-                hx = col * hex_spacing + row_offset;
-                hy = row * hex_spacing * 0.866;  // sqrt(3)/2 for hex packing
-                // Only place holes within fan radius
-                if (sqrt(hx*hx + hy*hy) < fan_diameter/2 - 2) {
-                    translate([fan_x + hx, fan_y + hy, -1])
+        // Honeycomb ventilation pattern spanning 80% of width
+        hex_rows_x = floor(vent_length / hex_spacing);
+        hex_rows_y = floor(vent_width / (hex_spacing * 0.866));
+
+        for (row = [0 : hex_rows_y]) {
+            row_offset = (row % 2) * hex_spacing / 2;
+            for (col = [0 : hex_rows_x]) {
+                hx = vent_start_x + col * hex_spacing + row_offset;
+                hy = vent_start_y + row * hex_spacing * 0.866;
+                // Only place holes within vent area bounds
+                if (hx > vent_start_x + hex_hole_dia/2 &&
+                    hx < vent_start_x + vent_length - hex_hole_dia/2 &&
+                    hy > vent_start_y + hex_hole_dia/2 &&
+                    hy < vent_start_y + vent_width - hex_hole_dia/2) {
+                    translate([hx, hy, -1])
                         cylinder(d=hex_hole_dia, h=wall + 2, $fn=6);
                 }
-            }
-        }
-
-        // QuinLED ventilation holes - adjusted to stay within lid bounds
-        for (i = [-2:2]) {
-            for (j = [-2:2]) {
-                translate([quinled_center_x + i * 10, quinled_center_y + j * 10, -1])
-                    cylinder(d=4, h=wall + 2);
             }
         }
     }
