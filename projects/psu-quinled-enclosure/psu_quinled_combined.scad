@@ -19,8 +19,8 @@ psu_screw_head_dia = 8;  // M4 screw head
 
 /* [PSU Fan] */
 fan_diameter = 60;
-fan_from_front = 48;  // X offset from front of PSU
-fan_from_left = 75;   // Y offset from left edge of PSU
+fan_from_front = 168;  // X offset from front of PSU (mirrored: 215.9 - 48)
+fan_from_left = 40;    // Y offset from left edge of PSU (mirrored: 115 - 75)
 
 /* [QuinLED Board] */
 quinled_length = 100;
