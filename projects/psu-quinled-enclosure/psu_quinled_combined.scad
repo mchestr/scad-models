@@ -92,20 +92,44 @@ lid_screw_positions = [
     [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]
 ];
 
-// Standoff module (cylindrical)
-module standoff(outer_d, inner_d, height) {
+// Standoff module (cylindrical with base fillet)
+module standoff(outer_d, inner_d, height, fillet_r=1.5) {
     difference() {
-        cylinder(d=outer_d, h=height);
+        union() {
+            cylinder(d=outer_d, h=height);
+            cylinder_fillet(outer_d, fillet_r);
+        }
         translate([0, 0, -0.5])
             cylinder(d=inner_d, h=height + 1);
     }
 }
 
-// Corner screw boss (square, connects to walls)
-module corner_screw_boss(size, screw_d, height, corner) {
+// Corner screw boss (square with fillets, connects to walls)
+module corner_screw_boss(size, screw_d, height, corner, fillet_r=2) {
     // corner: 0=front-left, 1=front-right, 2=back-left, 3=back-right
+    // Fillets on exposed edges (not touching walls) and base
     difference() {
-        cube([size, size, height]);
+        union() {
+            cube([size, size, height]);
+            // Base fillet on exposed edges based on corner position
+            if (corner == 0) {
+                // Front-left: exposed edges at +X and +Y
+                translate([size, 0, 0]) rotate([0, 0, 90]) internal_fillet(size, fillet_r);
+                translate([0, size, 0]) internal_fillet(size, fillet_r);
+            } else if (corner == 1) {
+                // Front-right: exposed edges at +X and -Y (which is at Y=0 in local coords)
+                translate([size, 0, 0]) rotate([0, 0, 90]) internal_fillet(size, fillet_r);
+                translate([size, 0, 0]) rotate([0, 0, 180]) internal_fillet(size, fillet_r);
+            } else if (corner == 2) {
+                // Back-left: exposed edges at -X and +Y
+                translate([0, size, 0]) internal_fillet(size, fillet_r);
+                rotate([0, 0, -90]) internal_fillet(size, fillet_r);
+            } else {
+                // Back-right: exposed edges at -X and -Y
+                translate([size, 0, 0]) rotate([0, 0, 180]) internal_fillet(size, fillet_r);
+                rotate([0, 0, -90]) internal_fillet(size, fillet_r);
+            }
+        }
         // Screw hole in center of boss
         translate([size/2, size/2, -0.5])
             cylinder(d=screw_d, h=height + 1);
@@ -116,6 +140,47 @@ module corner_screw_boss(size, screw_d, height, corner) {
 module corner_chamfer(size, height) {
     linear_extrude(height)
         polygon([[0, 0], [size, 0], [0, size]]);
+}
+
+// Fillet for cylinder base (quarter torus)
+module cylinder_fillet(d, fillet_r) {
+    rotate_extrude()
+        translate([d/2 - fillet_r, 0, 0])
+            difference() {
+                square([fillet_r + 0.1, fillet_r + 0.1]);
+                translate([fillet_r, fillet_r, 0])
+                    circle(r=fillet_r);
+            }
+}
+
+// Internal fillet for walls (runs along an edge)
+module internal_fillet(length, radius) {
+    difference() {
+        cube([length, radius, radius]);
+        translate([-0.1, radius, radius])
+            rotate([0, 90, 0])
+                cylinder(r=radius, h=length + 0.2);
+    }
+}
+
+// Rounded cable hole with strain relief collar
+module cable_hole_with_relief(dia, wall_thickness, collar_height=3, collar_width=2) {
+    union() {
+        // Main hole
+        cylinder(d=dia, h=wall_thickness + 2);
+        // External collar for zip-tie
+        translate([0, 0, wall_thickness])
+            difference() {
+                cylinder(d=dia + collar_width*2, h=collar_height);
+                translate([0, 0, -0.1])
+                    cylinder(d=dia, h=collar_height + 0.2);
+                // Zip-tie slot
+                translate([0, 0, collar_height/2])
+                    rotate_extrude()
+                        translate([dia/2 + collar_width/2, 0, 0])
+                            circle(d=collar_width * 0.7);
+            }
+    }
 }
 
 // Main enclosure body
@@ -171,26 +236,65 @@ module enclosure_body() {
             rotate([0, 90, 0])
                 cylinder(d=psu_power_hole_dia, h=wall + 2);
 
-        // LEFT SIDE (Y=0): PSU ventilation slots
+        // LEFT SIDE (Y=0): PSU ventilation slots with center bridge
+        slot_bridge = 2;  // Bridge thickness
+        slot_half = (slot_length - slot_bridge) / 2;
         for (i = [0:7]) {
-            translate([outer_length/2 - 3.5 * slot_spacing + i * slot_spacing, -0.5, wall + psu_height/2])
-                cube([slot_width, wall + 1, slot_length], center=true);
+            // Upper half of slot
+            translate([outer_length/2 - 3.5 * slot_spacing + i * slot_spacing, -0.5, wall + psu_height/2 + slot_bridge/2 + slot_half/2])
+                cube([slot_width, wall + 1, slot_half], center=true);
+            // Lower half of slot
+            translate([outer_length/2 - 3.5 * slot_spacing + i * slot_spacing, -0.5, wall + psu_height/2 - slot_bridge/2 - slot_half/2])
+                cube([slot_width, wall + 1, slot_half], center=true);
         }
 
-        // BACK WALL (X=max): PSU ventilation slots
+        // BACK WALL (X=max): PSU ventilation slots with center bridge
         for (i = [0:5]) {
-            translate([outer_length + 0.5, psu_area_start_y + psu_width/2 - 2.5 * slot_spacing + i * slot_spacing, wall + psu_height/2])
-                cube([wall + 1, slot_width, slot_length], center=true);
+            // Upper half of slot
+            translate([outer_length + 0.5, psu_area_start_y + psu_width/2 - 2.5 * slot_spacing + i * slot_spacing, wall + psu_height/2 + slot_bridge/2 + slot_half/2])
+                cube([wall + 1, slot_width, slot_half], center=true);
+            // Lower half of slot
+            translate([outer_length + 0.5, psu_area_start_y + psu_width/2 - 2.5 * slot_spacing + i * slot_spacing, wall + psu_height/2 - slot_bridge/2 - slot_half/2])
+                cube([wall + 1, slot_width, slot_half], center=true);
         }
 
-        // RIGHT SIDE (Y=max): QuinLED LED cable slit
-        translate([outer_length/2 - led_slit_width/2, outer_width - wall - 1, wall + quinled_standoff_height + 5])
-            cube([led_slit_width, wall + 2, led_slit_height]);
+        // RIGHT SIDE (Y=max): QuinLED LED cable slit (rounded corners to reduce stress)
+        slit_corner_r = 3;
+        translate([0, outer_width - wall - 1, 0])
+            hull() {
+                translate([outer_length/2 - led_slit_width/2 + slit_corner_r, 0, wall + quinled_standoff_height + 5 + slit_corner_r])
+                    rotate([-90, 0, 0])
+                        cylinder(r=slit_corner_r, h=wall + 2);
+                translate([outer_length/2 + led_slit_width/2 - slit_corner_r, 0, wall + quinled_standoff_height + 5 + slit_corner_r])
+                    rotate([-90, 0, 0])
+                        cylinder(r=slit_corner_r, h=wall + 2);
+                translate([outer_length/2 - led_slit_width/2 + slit_corner_r, 0, wall + quinled_standoff_height + 5 + led_slit_height - slit_corner_r])
+                    rotate([-90, 0, 0])
+                        cylinder(r=slit_corner_r, h=wall + 2);
+                translate([outer_length/2 + led_slit_width/2 - slit_corner_r, 0, wall + quinled_standoff_height + 5 + led_slit_height - slit_corner_r])
+                    rotate([-90, 0, 0])
+                        cylinder(r=slit_corner_r, h=wall + 2);
+            }
 
         // BACK WALL (X=max): Antenna hole
         translate([outer_length - wall - 1, quinled_area_center_y, wall + quinled_standoff_height + 15])
             rotate([0, 90, 0])
                 cylinder(d=antenna_dia, h=wall + 2);
+
+        // Rubber feet recesses (for adhesive bumper feet)
+        feet_dia = 12;      // Diameter of rubber foot
+        feet_depth = 1.5;   // Recess depth
+        feet_inset = 20;    // Distance from edges
+        feet_positions = [
+            [feet_inset, feet_inset],
+            [outer_length - feet_inset, feet_inset],
+            [feet_inset, outer_width - feet_inset],
+            [outer_length - feet_inset, outer_width - feet_inset]
+        ];
+        for (pos = feet_positions) {
+            translate([pos[0], pos[1], -0.1])
+                cylinder(d=feet_dia, h=feet_depth + 0.1);
+        }
     }
 
 
@@ -205,6 +309,39 @@ module enclosure_body() {
         translate([pos[0], pos[1], wall])
             standoff(quinled_standoff_dia, quinled_hole_dia, quinled_standoff_height);
     }
+
+    // Strain relief collars for cable holes
+    strain_collar_height = 4;
+    strain_collar_width = 3;
+    zip_groove_depth = 1.5;
+
+    // PSU power cable strain relief (front wall, external)
+    translate([0, psu_area_start_y + psu_width/2, wall + 15])
+        rotate([0, -90, 0])
+            difference() {
+                cylinder(d=psu_power_hole_dia + strain_collar_width*2, h=strain_collar_height);
+                translate([0, 0, -0.1])
+                    cylinder(d=psu_power_hole_dia, h=strain_collar_height + 0.2);
+                // Zip-tie groove
+                translate([0, 0, strain_collar_height/2])
+                    rotate_extrude()
+                        translate([psu_power_hole_dia/2 + strain_collar_width - zip_groove_depth, 0, 0])
+                            circle(d=zip_groove_depth * 1.5);
+            }
+
+    // Antenna cable strain relief (back wall, external)
+    translate([outer_length, quinled_area_center_y, wall + quinled_standoff_height + 15])
+        rotate([0, 90, 0])
+            difference() {
+                cylinder(d=antenna_dia + strain_collar_width*2, h=strain_collar_height);
+                translate([0, 0, -0.1])
+                    cylinder(d=antenna_dia, h=strain_collar_height + 0.2);
+                // Zip-tie groove
+                translate([0, 0, strain_collar_height/2])
+                    rotate_extrude()
+                        translate([antenna_dia/2 + strain_collar_width - zip_groove_depth, 0, 0])
+                            circle(d=zip_groove_depth * 1.5);
+            }
 
     // Divider wall with U-shaped cable slits
     divider_height = inner_height * 0.6;
@@ -242,6 +379,25 @@ module enclosure_body() {
     // Back-right corner
     translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
         corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
+
+    // Internal fillets where walls meet floor (strengthens corners)
+    floor_fillet = 2;
+    // Front wall (X=0 side, along Y)
+    translate([wall, wall, wall])
+        rotate([0, 0, 0])
+            internal_fillet(inner_width, floor_fillet);
+    // Back wall (X=max side, along Y)
+    translate([outer_length - wall, wall + inner_width, wall])
+        rotate([0, 0, 180])
+            internal_fillet(inner_width, floor_fillet);
+    // Left wall (Y=0 side, along X)
+    translate([wall + inner_length, wall, wall])
+        rotate([0, 0, -90])
+            internal_fillet(inner_length, floor_fillet);
+    // Right wall (Y=max side, along X)
+    translate([wall, outer_width - wall, wall])
+        rotate([0, 0, 90])
+            internal_fillet(inner_length, floor_fillet);
 }
 
 // Lid module
@@ -297,15 +453,21 @@ module lid() {
             rotate([0, 0, 180])
                 corner_chamfer(chamfer_size, wall + 0.2);
 
-        // Fan cutout
-        translate([fan_x, fan_y, -1])
-            cylinder(d=fan_diameter + 2, h=wall + 2);
-
-        // Fan grille pattern
-        for (angle = [0:30:150]) {
-            translate([fan_x, fan_y, -1])
-                rotate([0, 0, angle])
-                    cube([fan_diameter + 10, 2, wall + 2], center=true);
+        // Fan grille - hexagonal hole pattern (honeycomb)
+        hex_hole_dia = 6;
+        hex_spacing = 8;
+        hex_rows = floor(fan_diameter / hex_spacing);
+        for (row = [-hex_rows/2 : hex_rows/2]) {
+            row_offset = (abs(row) % 2) * hex_spacing / 2;
+            for (col = [-hex_rows/2 : hex_rows/2]) {
+                hx = col * hex_spacing + row_offset;
+                hy = row * hex_spacing * 0.866;  // sqrt(3)/2 for hex packing
+                // Only place holes within fan radius
+                if (sqrt(hx*hx + hy*hy) < fan_diameter/2 - 2) {
+                    translate([fan_x + hx, fan_y + hy, -1])
+                        cylinder(d=hex_hole_dia, h=wall + 2, $fn=6);
+                }
+            }
         }
 
         // QuinLED ventilation holes
@@ -325,10 +487,11 @@ module lid() {
     }
 }
 
-// Lid in print orientation (mirrored for correct assembly)
+// Lid in print orientation (flipped so lip faces UP for no supports)
 module lid_for_print() {
-    mirror([0, 1, 0])
-        lid();
+    translate([0, outer_width, wall + snap_height])
+        rotate([180, 0, 0])
+            lid();
 }
 
 // Lid positioned for assembly view
