@@ -292,10 +292,10 @@ module lid() {
     rail_actual_depth = rail_depth - rail_tolerance;
     rail_actual_height = rail_height - rail_tolerance;
 
-    // Honeycomb vent area - centered
+    // Honeycomb vent area - near back, 100mm length
     vent_width = outer_width * vent_coverage;
-    vent_length = outer_length * 0.5;  // 50% of length
-    vent_start_x = (outer_length - vent_length) / 2;
+    vent_length = 100;
+    vent_start_x = outer_length - wall - vent_length - 10;  // 10mm from back wall
     vent_start_y = (outer_width - vent_width) / 2;
 
     // Honeycomb parameters
