@@ -1,5 +1,6 @@
 // Combined PSU + QuinLED Enclosure
 // Single box with PSU and QuinLED side by side
+// Sliding lid design
 
 /* [Part Selection] */
 // Which part to render
@@ -33,11 +34,15 @@ quinled_standoff_height = 6;
 
 /* [Enclosure Settings] */
 clearance = 5;  // General clearance around components
-boss_clearance = 12;  // Extra clearance on PSU side (Y=0) for corner bosses
 terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
 wall = 3;
 lid_tolerance = 0.3;
 chamfer_size = 3;  // Corner chamfer size
+
+/* [Sliding Lid] */
+rail_height = 4;    // Height of the rail/groove
+rail_depth = 2.5;   // How far rail projects into groove
+rail_tolerance = 0.2;  // Sliding clearance
 
 /* [Layout - Side by Side] */
 gap_between = 5;  // Gap between PSU and QuinLED section
@@ -55,27 +60,21 @@ slot_width = 3;
 slot_length = 20;
 slot_spacing = 6;
 
-/* [Lid Screws] */
-lid_screw_dia = 3;  // M3 screws
-lid_screw_head_dia = 6;
-
 /* [Hidden] */
 $fn = 60;
-snap_height = 4;
-snap_depth = 1.5;
 
 // Calculated dimensions
 quinled_section_width = quinled_width + clearance * 2;
-inner_length = psu_length + clearance + terminal_clearance + boss_clearance;  // boss_clearance at front, terminal at back
-inner_width = psu_width + boss_clearance + clearance + gap_between + quinled_section_width;  // boss_clearance on PSU side (Y=0)
+inner_length = psu_length + clearance * 2 + terminal_clearance;
+inner_width = psu_width + clearance * 2 + gap_between + quinled_section_width;
 inner_height = psu_height + clearance;
 outer_length = inner_length + wall * 2;
 outer_width = inner_width + wall * 2;
 outer_height = inner_height + wall;
 
-// Area positions (PSU side has extra clearance for corner bosses)
-psu_area_start_x = wall + boss_clearance;  // Extra clearance at front for boss
-psu_area_start_y = wall + boss_clearance;  // Extra clearance on left side for bosses
+// Area positions
+psu_area_start_x = wall + clearance;
+psu_area_start_y = wall + clearance;
 psu_area_end_y = psu_area_start_y + psu_width;
 quinled_area_start_y = psu_area_end_y + gap_between;
 quinled_area_center_y = quinled_area_start_y + quinled_section_width / 2;
@@ -83,17 +82,6 @@ quinled_area_center_y = quinled_area_start_y + quinled_section_width / 2;
 // QuinLED board position (20mm from back wall/antenna)
 quinled_board_x = outer_length - wall - 20 - quinled_length;
 quinled_board_y = quinled_area_start_y + clearance;
-
-// Corner boss size for lid screws
-corner_boss_size = 10;
-
-// Lid screw positions (all corners now have full-size bosses)
-lid_screw_positions = [
-    [wall + corner_boss_size/2, wall + corner_boss_size/2],  // Front-left
-    [outer_length - wall - corner_boss_size/2, wall + corner_boss_size/2],  // Back-left
-    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],  // Front-right
-    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]  // Back-right
-];
 
 // Standoff module (cylindrical with base fillet)
 module standoff(outer_d, inner_d, height, fillet_r=1.5) {
@@ -104,16 +92,6 @@ module standoff(outer_d, inner_d, height, fillet_r=1.5) {
         }
         translate([0, 0, -0.5])
             cylinder(d=inner_d, h=height + 1);
-    }
-}
-
-// Corner screw boss (simple square pillar)
-module corner_screw_boss(size, screw_d, height, corner) {
-    difference() {
-        cube([size, size, height]);
-        // Screw hole in center of boss (starts 1mm up to ensure solid floor contact)
-        translate([size/2, size/2, 1])
-            cylinder(d=screw_d, h=height);
     }
 }
 
@@ -144,26 +122,6 @@ module internal_fillet(length, radius) {
     }
 }
 
-// Rounded cable hole with strain relief collar
-module cable_hole_with_relief(dia, wall_thickness, collar_height=3, collar_width=2) {
-    union() {
-        // Main hole
-        cylinder(d=dia, h=wall_thickness + 2);
-        // External collar for zip-tie
-        translate([0, 0, wall_thickness])
-            difference() {
-                cylinder(d=dia + collar_width*2, h=collar_height);
-                translate([0, 0, -0.1])
-                    cylinder(d=dia, h=collar_height + 0.2);
-                // Zip-tie slot
-                translate([0, 0, collar_height/2])
-                    rotate_extrude()
-                        translate([dia/2 + collar_width/2, 0, 0])
-                            circle(d=collar_width * 0.7);
-            }
-    }
-}
-
 // Main enclosure body
 module enclosure_body() {
     // PSU mount positions (centered on PSU with specified center-to-center spacing)
@@ -176,6 +134,9 @@ module enclosure_body() {
         [psu_center_x + psu_hole_spacing_length / 2, psu_center_y + psu_hole_spacing_width / 2]
     ];
 
+    // Rail groove position (near top of walls)
+    rail_z = outer_height - rail_height;
+
     difference() {
         // Outer shell
         cube([outer_length, outer_width, outer_height]);
@@ -184,11 +145,18 @@ module enclosure_body() {
         translate([wall, wall, wall])
             cube([inner_length, inner_width, inner_height + 1]);
 
+        // Lid sliding grooves on front wall (X=0, inner face)
+        translate([wall - rail_depth, wall - 0.1, rail_z])
+            cube([rail_depth + 0.1, inner_width + 0.2, rail_height + 1]);
+
+        // Lid sliding grooves on back wall (X=max, inner face)
+        translate([outer_length - wall - 0.1, wall - 0.1, rail_z])
+            cube([rail_depth + 0.1, inner_width + 0.2, rail_height + 1]);
+
         // Corner chamfers
         // Front-left (X=0, Y=0)
         translate([0, 0, -0.1])
-            rotate([0, 0, 0])
-                corner_chamfer(chamfer_size, outer_height + 0.2);
+            corner_chamfer(chamfer_size, outer_height + 0.2);
         // Front-right (X=0, Y=max)
         translate([0, outer_width, -0.1])
             rotate([0, 0, -90])
@@ -259,12 +227,10 @@ module enclosure_body() {
             }
 
         // RIGHT SIDE (Y=max): Antenna hole (towards back corner, higher up)
-        translate([outer_length - wall - corner_boss_size - 10, outer_width - wall - 1, outer_height - 15])
+        translate([outer_length - wall - 20, outer_width - wall - 1, outer_height - 15])
             rotate([-90, 0, 0])
                 cylinder(d=antenna_dia, h=wall + 2);
-
     }
-
 
     // QuinLED mounting standoffs
     quinled_mounts = [
@@ -293,34 +259,11 @@ module enclosure_body() {
             cube([divider_slit_width, gap_between + 2, divider_slit_height + 1]);
     }
 
-    // Snap-fit ledge for lid
-    translate([wall - 1, wall - 1, outer_height - 2])
-        difference() {
-            cube([inner_length + 2, inner_width + 2, 2]);
-            translate([2, 2, -0.5])
-                cube([inner_length - 2, inner_width - 2, 3]);
-        }
-
-    // Square corner screw bosses for lid (all full-size now that we have proper clearance)
-    // Front-left corner
-    translate([wall, wall, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
-    // Front-right corner
-    translate([wall, outer_width - wall - corner_boss_size, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 1);
-    // Back-left corner
-    translate([outer_length - wall - corner_boss_size, wall, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
-    // Back-right corner
-    translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
-        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
-
     // Internal fillets where walls meet floor (strengthens corners)
     floor_fillet = 2;
     // Front wall (X=0 side, along Y)
     translate([wall, wall, wall])
-        rotate([0, 0, 0])
-            internal_fillet(inner_width, floor_fillet);
+        internal_fillet(inner_width, floor_fillet);
     // Back wall (X=max side, along Y)
     translate([outer_length - wall, wall + inner_width, wall])
         rotate([0, 0, 180])
@@ -333,46 +276,38 @@ module enclosure_body() {
     translate([wall, outer_width - wall, wall])
         rotate([0, 0, 90])
             internal_fillet(inner_length, floor_fillet);
+
+    // End stop for sliding lid (left side, Y=0)
+    // Small block at the end of the rail grooves to stop the lid
+    translate([wall - rail_depth, wall - 0.5, outer_height - rail_height])
+        cube([rail_depth, 0.5, rail_height]);
+    translate([outer_length - wall, wall - 0.5, outer_height - rail_height])
+        cube([rail_depth, 0.5, rail_height]);
 }
 
-// Lid module
+// Sliding lid module
 module lid() {
-    lid_inner_length = inner_length - lid_tolerance * 2;
-    lid_inner_width = inner_width - lid_tolerance * 2;
     fan_x = psu_area_start_x + fan_from_front;
     fan_y = psu_area_start_y + fan_from_left;
     quinled_center_x = quinled_board_x + quinled_length/2;
     quinled_center_y = quinled_board_y + quinled_width/2;
+
+    // Rail dimensions (slightly smaller than groove for clearance)
+    rail_actual_depth = rail_depth - rail_tolerance;
+    rail_actual_height = rail_height - rail_tolerance;
 
     difference() {
         union() {
             // Main lid plate
             cube([outer_length, outer_width, wall]);
 
-            // Inner lip for snap fit (with corner cutouts for screw bosses)
-            translate([wall + lid_tolerance, wall + lid_tolerance, wall])
-                difference() {
-                    cube([lid_inner_length, lid_inner_width, snap_height]);
-                    // Inner cutout
-                    translate([2, 2, -0.5])
-                        cube([lid_inner_length - 4, lid_inner_width - 4, snap_height + 1]);
-                    // Corner cutouts for screw bosses
-                    boss_clearance = corner_boss_size + lid_tolerance * 2;
-                    translate([-lid_tolerance - 0.1, -lid_tolerance - 0.1, -0.5])
-                        cube([boss_clearance, boss_clearance, snap_height + 1]);
-                    translate([lid_inner_length - boss_clearance + lid_tolerance + 0.1, -lid_tolerance - 0.1, -0.5])
-                        cube([boss_clearance, boss_clearance, snap_height + 1]);
-                    translate([-lid_tolerance - 0.1, lid_inner_width - boss_clearance + lid_tolerance + 0.1, -0.5])
-                        cube([boss_clearance, boss_clearance, snap_height + 1]);
-                    translate([lid_inner_length - boss_clearance + lid_tolerance + 0.1, lid_inner_width - boss_clearance + lid_tolerance + 0.1, -0.5])
-                        cube([boss_clearance, boss_clearance, snap_height + 1]);
-                }
+            // Front rail (slides into front wall groove)
+            translate([wall - rail_actual_depth, wall, wall])
+                cube([rail_actual_depth, inner_width, rail_actual_height]);
 
-            // Screw hole reinforcement
-            for (pos = lid_screw_positions) {
-                translate([pos[0], pos[1], 0])
-                    cylinder(d=lid_screw_head_dia + 2, h=wall);
-            }
+            // Back rail (slides into back wall groove)
+            translate([outer_length - wall, wall, wall])
+                cube([rail_actual_depth, inner_width, rail_actual_height]);
         }
 
         // Corner chamfers
@@ -412,31 +347,20 @@ module lid() {
                     cylinder(d=4, h=wall + 2);
             }
         }
-
-        // Screw holes with tapered countersink
-        for (pos = lid_screw_positions) {
-            // Tapered hole - wide at bottom (Z=0), narrow at top
-            translate([pos[0], pos[1], -0.1])
-                cylinder(d1=lid_screw_head_dia + 1, d2=lid_screw_dia + 0.5, h=wall + 0.2);
-        }
     }
 }
 
-// Lid in print orientation (flipped so lip faces UP for no supports)
+// Lid in print orientation (rails facing up for no supports)
 module lid_for_print() {
-    translate([0, outer_width, wall + snap_height])
+    translate([0, outer_width, wall + rail_height - rail_tolerance])
         rotate([180, 0, 0])
             lid();
 }
 
 // Lid positioned for assembly view
 module lid_assembled() {
-    translate([0, -outer_width, outer_height - wall * 2])
-        translate([0, outer_width, wall])
-            mirror([0, 1, 0])
-                rotate([180, 0, 0])
-                    translate([0, 0, -wall])
-                        lid();
+    translate([0, 0, outer_height - wall])
+        lid();
 }
 
 // Debug orientation labels
@@ -499,3 +423,4 @@ if (part == "labeled") {
 // Info output
 echo("Enclosure outer dimensions:", outer_length, "x", outer_width, "x", outer_height + wall);
 echo("Total height with lid:", outer_height + wall);
+echo("Lid slides in from RIGHT side (Y=max)");
