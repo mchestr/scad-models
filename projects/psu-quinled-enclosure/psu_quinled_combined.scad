@@ -280,8 +280,8 @@ module enclosure_body() {
                         cylinder(r=slit_corner_r, h=wall + 2);
             }
 
-        // RIGHT SIDE (Y=max): Antenna hole (near back of QuinLED board)
-        translate([quinled_board_x + quinled_length - 15, outer_width - wall - 1, wall + quinled_standoff_height + 15])
+        // RIGHT SIDE (Y=max): Antenna hole (towards back corner, clear of LED slit)
+        translate([outer_length - wall - corner_boss_size - 10, outer_width - wall - 1, wall + quinled_standoff_height + 15])
             rotate([-90, 0, 0])
                 cylinder(d=antenna_dia, h=wall + 2);
 
@@ -334,7 +334,7 @@ module enclosure_body() {
             }
 
     // Antenna cable strain relief (right side, external)
-    translate([quinled_board_x + quinled_length - 15, outer_width, wall + quinled_standoff_height + 15])
+    translate([outer_length - wall - corner_boss_size - 10, outer_width, wall + quinled_standoff_height + 15])
         rotate([-90, 0, 0])
             difference() {
                 cylinder(d=antenna_dia + strain_collar_width*2, h=strain_collar_height);
