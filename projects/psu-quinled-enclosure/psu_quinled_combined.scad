@@ -40,7 +40,7 @@ chamfer_size = 3;  // Corner chamfer size
 /* [Sliding Lid] */
 rail_height = 4;    // Height of the rail/groove
 rail_depth = 2;     // How far rail projects into groove (leaves 2mm wall)
-rail_tolerance = 0.2;  // Sliding clearance
+rail_tolerance = 0.3;  // Sliding clearance
 
 /* [Layout - Side by Side] */
 gap_between = 3;  // Gap between PSU and QuinLED section (reduced for space)
@@ -279,10 +279,10 @@ module enclosure_body() {
 
     // End stop for sliding lid (left side, Y=0)
     // Small block at the end of the rail grooves to stop the lid
-    translate([wall - rail_depth, wall - 0.5, outer_height - rail_height])
-        cube([rail_depth, 0.5, rail_height]);
-    translate([outer_length - wall, wall - 0.5, outer_height - rail_height])
-        cube([rail_depth, 0.5, rail_height]);
+    translate([wall - rail_depth, wall - 1.5, outer_height - rail_height])
+        cube([rail_depth, 1.5, rail_height]);
+    translate([outer_length - wall, wall - 1.5, outer_height - rail_height])
+        cube([rail_depth, 1.5, rail_height]);
 }
 
 // Sliding lid module
