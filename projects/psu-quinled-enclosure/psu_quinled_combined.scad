@@ -258,12 +258,23 @@ module lid() {
             // Main lid plate
             cube([outer_length, outer_width, wall]);
 
-            // Inner lip for snap fit
+            // Inner lip for snap fit (with corner cutouts for screw bosses)
             translate([wall + lid_tolerance, wall + lid_tolerance, wall])
                 difference() {
                     cube([lid_inner_length, lid_inner_width, snap_height]);
+                    // Inner cutout
                     translate([2, 2, -0.5])
                         cube([lid_inner_length - 4, lid_inner_width - 4, snap_height + 1]);
+                    // Corner cutouts for screw bosses
+                    boss_clearance = corner_boss_size + lid_tolerance * 2;
+                    translate([-lid_tolerance - 0.1, -lid_tolerance - 0.1, -0.5])
+                        cube([boss_clearance, boss_clearance, snap_height + 1]);
+                    translate([lid_inner_length - boss_clearance + lid_tolerance + 0.1, -lid_tolerance - 0.1, -0.5])
+                        cube([boss_clearance, boss_clearance, snap_height + 1]);
+                    translate([-lid_tolerance - 0.1, lid_inner_width - boss_clearance + lid_tolerance + 0.1, -0.5])
+                        cube([boss_clearance, boss_clearance, snap_height + 1]);
+                    translate([lid_inner_length - boss_clearance + lid_tolerance + 0.1, lid_inner_width - boss_clearance + lid_tolerance + 0.1, -0.5])
+                        cube([boss_clearance, boss_clearance, snap_height + 1]);
                 }
 
             // Screw hole reinforcement
