@@ -1,0 +1,353 @@
+// Combined PSU + QuinLED Enclosure
+// Single box with PSU and QuinLED side by side
+
+/* [Part Selection] */
+// Which part to render
+part = "all"; // [body,lid,all,assembled,labeled]
+
+/* [PSU Dimensions] */
+psu_length = 215.9;  // 8.5 inches
+psu_width = 115;
+psu_height = 50;
+
+/* [PSU Mounting Holes] */
+psu_hole_back_offset = 30;
+psu_hole_front_offset = 32;
+psu_hole_side_offset = 31;
+psu_screw_dia = 3;  // M3 screws from bottom
+psu_screw_head_dia = 6;  // M3 screw head
+
+/* [PSU Fan] */
+fan_diameter = 60;
+fan_from_front = 48;  // X offset from front of PSU
+fan_from_left = 38;   // Y offset from left edge of PSU
+
+/* [QuinLED Board] */
+quinled_length = 100;
+quinled_width = 48;
+quinled_height = 25;
+quinled_hole_edge = 3;
+quinled_hole_offset_back_right = 13;  // Back-right hole is 13mm from right edge
+quinled_hole_dia = 2.5;  // M2.5
+quinled_standoff_dia = 6;
+quinled_standoff_height = 6;
+
+/* [Enclosure Settings] */
+clearance = 4;
+wall = 3;
+lid_tolerance = 0.3;
+
+/* [Layout - Side by Side] */
+gap_between = 5;  // Gap between PSU and QuinLED section
+divider_slit_width = 30;  // Slit in divider for power cables
+divider_slit_height = 25; // Depth of U-slit from top
+
+/* [Wire Routing] */
+antenna_dia = 6;
+led_slit_width = 80;
+led_slit_height = 15;
+psu_power_hole_dia = 8;  // PSU AC power cable hole
+
+/* [Ventilation] */
+slot_width = 3;
+slot_length = 20;
+slot_spacing = 6;
+
+/* [Lid Screws] */
+lid_screw_dia = 3;  // M3 screws
+lid_screw_head_dia = 6;
+
+/* [Hidden] */
+$fn = 60;
+snap_height = 4;
+snap_depth = 1.5;
+
+// Calculated dimensions
+quinled_section_width = quinled_width + clearance * 2;
+inner_length = psu_length + clearance * 2;
+inner_width = psu_width + clearance * 2 + gap_between + quinled_section_width;
+inner_height = psu_height + clearance;
+outer_length = inner_length + wall * 2;
+outer_width = inner_width + wall * 2;
+outer_height = inner_height + wall;
+
+// Area positions
+psu_area_start_y = wall + clearance;
+psu_area_end_y = wall + clearance + psu_width;
+quinled_area_start_y = psu_area_end_y + gap_between;
+quinled_area_center_y = quinled_area_start_y + quinled_section_width / 2;
+
+// QuinLED board position (20mm from back wall/antenna)
+quinled_board_x = outer_length - wall - 20 - quinled_length;
+quinled_board_y = quinled_area_start_y + clearance;
+
+// Corner boss size for lid screws
+corner_boss_size = 12;
+
+// Lid screw positions (center of corner bosses)
+lid_screw_positions = [
+    [wall + corner_boss_size/2, wall + corner_boss_size/2],
+    [outer_length - wall - corner_boss_size/2, wall + corner_boss_size/2],
+    [wall + corner_boss_size/2, outer_width - wall - corner_boss_size/2],
+    [outer_length - wall - corner_boss_size/2, outer_width - wall - corner_boss_size/2]
+];
+
+// Standoff module (cylindrical)
+module standoff(outer_d, inner_d, height) {
+    difference() {
+        cylinder(d=outer_d, h=height);
+        translate([0, 0, -0.5])
+            cylinder(d=inner_d, h=height + 1);
+    }
+}
+
+// Corner screw boss (square, connects to walls)
+module corner_screw_boss(size, screw_d, height, corner) {
+    // corner: 0=front-left, 1=front-right, 2=back-left, 3=back-right
+    difference() {
+        cube([size, size, height]);
+        // Screw hole in center of boss
+        translate([size/2, size/2, -0.5])
+            cylinder(d=screw_d, h=height + 1);
+    }
+}
+
+// Main enclosure body
+module enclosure_body() {
+    // PSU mount positions
+    psu_mounts = [
+        [wall + clearance + psu_hole_back_offset, psu_area_start_y + psu_hole_side_offset],
+        [wall + clearance + psu_hole_back_offset, psu_area_start_y + psu_width - psu_hole_side_offset],
+        [outer_length - wall - clearance - psu_hole_front_offset, psu_area_start_y + psu_hole_side_offset],
+        [outer_length - wall - clearance - psu_hole_front_offset, psu_area_start_y + psu_width - psu_hole_side_offset]
+    ];
+
+    difference() {
+        // Outer shell
+        cube([outer_length, outer_width, outer_height]);
+
+        // Inner cavity
+        translate([wall, wall, wall])
+            cube([inner_length, inner_width, inner_height + 1]);
+
+        // PSU mounting holes through floor with tapered countersink
+        for (pos = psu_mounts) {
+            // Through hole
+            translate([pos[0], pos[1], -0.1])
+                cylinder(d=psu_screw_dia + 0.5, h=wall + 0.2);
+            // Tapered countersink on bottom (outside)
+            translate([pos[0], pos[1], -0.1])
+                cylinder(d1=psu_screw_head_dia + 1, d2=psu_screw_dia + 0.5, h=2.5);
+        }
+
+        // FRONT WALL (X=0): PSU power cable hole (8mm)
+        translate([-1, psu_area_start_y + psu_width/2, wall + 15])
+            rotate([0, 90, 0])
+                cylinder(d=psu_power_hole_dia, h=wall + 2);
+
+        // LEFT SIDE (Y=0): PSU ventilation slots
+        for (i = [0:7]) {
+            translate([outer_length/2 - 3.5 * slot_spacing + i * slot_spacing, -0.5, wall + psu_height/2])
+                cube([slot_width, wall + 1, slot_length], center=true);
+        }
+
+        // BACK WALL (X=max): PSU ventilation slots
+        for (i = [0:5]) {
+            translate([outer_length + 0.5, psu_area_start_y + psu_width/2 - 2.5 * slot_spacing + i * slot_spacing, wall + psu_height/2])
+                cube([wall + 1, slot_width, slot_length], center=true);
+        }
+
+        // RIGHT SIDE (Y=max): QuinLED LED cable slit
+        translate([outer_length/2 - led_slit_width/2, outer_width - wall - 1, wall + quinled_standoff_height + 5])
+            cube([led_slit_width, wall + 2, led_slit_height]);
+
+        // BACK WALL (X=max): Antenna hole
+        translate([outer_length - wall - 1, quinled_area_center_y, wall + quinled_standoff_height + 15])
+            rotate([0, 90, 0])
+                cylinder(d=antenna_dia, h=wall + 2);
+    }
+
+
+    // QuinLED mounting standoffs
+    quinled_mounts = [
+        [quinled_board_x + quinled_hole_edge, quinled_board_y + quinled_hole_edge],
+        [quinled_board_x + quinled_length - quinled_hole_edge, quinled_board_y + quinled_hole_edge],
+        [quinled_board_x + quinled_hole_edge, quinled_board_y + quinled_width - quinled_hole_edge],
+        [quinled_board_x + quinled_length - quinled_hole_edge, quinled_board_y + quinled_width - quinled_hole_offset_back_right]
+    ];
+    for (pos = quinled_mounts) {
+        translate([pos[0], pos[1], wall])
+            standoff(quinled_standoff_dia, quinled_hole_dia, quinled_standoff_height);
+    }
+
+    // Divider wall with U-shaped cable slits
+    divider_height = inner_height * 0.6;
+    difference() {
+        translate([wall, psu_area_end_y, wall])
+            cube([inner_length, gap_between, divider_height]);
+
+        // Front U-slit
+        translate([quinled_board_x + quinled_hole_edge, psu_area_end_y - 1, wall + divider_height - divider_slit_height])
+            cube([divider_slit_width, gap_between + 2, divider_slit_height + 1]);
+
+        // Back U-slit
+        translate([quinled_board_x + quinled_length - quinled_hole_edge - divider_slit_width, psu_area_end_y - 1, wall + divider_height - divider_slit_height])
+            cube([divider_slit_width, gap_between + 2, divider_slit_height + 1]);
+    }
+
+    // Snap-fit ledge for lid
+    translate([wall - 1, wall - 1, outer_height - 2])
+        difference() {
+            cube([inner_length + 2, inner_width + 2, 2]);
+            translate([2, 2, -0.5])
+                cube([inner_length - 2, inner_width - 2, 3]);
+        }
+
+    // Square corner screw bosses for lid
+    // Front-left corner
+    translate([wall, wall, wall])
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 0);
+    // Front-right corner
+    translate([wall, outer_width - wall - corner_boss_size, wall])
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 1);
+    // Back-left corner
+    translate([outer_length - wall - corner_boss_size, wall, wall])
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 2);
+    // Back-right corner
+    translate([outer_length - wall - corner_boss_size, outer_width - wall - corner_boss_size, wall])
+        corner_screw_boss(corner_boss_size, lid_screw_dia, inner_height, 3);
+}
+
+// Lid module
+module lid() {
+    lid_inner_length = inner_length - lid_tolerance * 2;
+    lid_inner_width = inner_width - lid_tolerance * 2;
+    fan_x = wall + clearance + fan_from_front;
+    fan_y = psu_area_start_y + fan_from_left;
+    quinled_center_x = quinled_board_x + quinled_length/2;
+    quinled_center_y = quinled_board_y + quinled_width/2;
+
+    difference() {
+        union() {
+            // Main lid plate
+            cube([outer_length, outer_width, wall]);
+
+            // Inner lip for snap fit
+            translate([wall + lid_tolerance, wall + lid_tolerance, wall])
+                difference() {
+                    cube([lid_inner_length, lid_inner_width, snap_height]);
+                    translate([2, 2, -0.5])
+                        cube([lid_inner_length - 4, lid_inner_width - 4, snap_height + 1]);
+                }
+
+            // Screw hole reinforcement
+            for (pos = lid_screw_positions) {
+                translate([pos[0], pos[1], 0])
+                    cylinder(d=lid_screw_head_dia + 2, h=wall);
+            }
+        }
+
+        // Fan cutout
+        translate([fan_x, fan_y, -1])
+            cylinder(d=fan_diameter + 2, h=wall + 2);
+
+        // Fan grille pattern
+        for (angle = [0:30:150]) {
+            translate([fan_x, fan_y, -1])
+                rotate([0, 0, angle])
+                    cube([fan_diameter + 10, 2, wall + 2], center=true);
+        }
+
+        // QuinLED ventilation holes
+        for (i = [-2:2]) {
+            for (j = [-3:3]) {
+                translate([quinled_center_x + i * 10, quinled_center_y + j * 12, -1])
+                    cylinder(d=4, h=wall + 2);
+            }
+        }
+
+        // Screw holes with tapered countersink
+        for (pos = lid_screw_positions) {
+            // Tapered hole - wide at bottom (Z=0), narrow at top
+            translate([pos[0], pos[1], -0.1])
+                cylinder(d1=lid_screw_head_dia + 1, d2=lid_screw_dia + 0.5, h=wall + 0.2);
+        }
+    }
+}
+
+// Lid in print orientation (mirrored for correct assembly)
+module lid_for_print() {
+    mirror([0, 1, 0])
+        lid();
+}
+
+// Lid positioned for assembly view
+module lid_assembled() {
+    translate([0, -outer_width, outer_height - wall * 2])
+        translate([0, outer_width, wall])
+            mirror([0, 1, 0])
+                rotate([180, 0, 0])
+                    translate([0, 0, -wall])
+                        lid();
+}
+
+// Debug orientation labels
+module orientation_labels() {
+    color("red") {
+        translate([0, outer_width/2, outer_height + 10])
+            rotate([90, 0, 90])
+                linear_extrude(1)
+                    text("FRONT (X=0)", size=8, halign="center");
+        translate([outer_length, outer_width/2, outer_height + 10])
+            rotate([90, 0, -90])
+                linear_extrude(1)
+                    text("BACK (X=max)", size=8, halign="center");
+    }
+    color("green") {
+        translate([outer_length/2, 0, outer_height + 10])
+            rotate([90, 0, 0])
+                linear_extrude(1)
+                    text("LEFT/PSU (Y=0)", size=8, halign="center");
+        translate([outer_length/2, outer_width, outer_height + 10])
+            rotate([90, 0, 180])
+                linear_extrude(1)
+                    text("RIGHT/QUINLED (Y=max)", size=8, halign="center");
+    }
+    color("blue") {
+        translate([outer_length + 20, outer_width/2, 0]) {
+            cylinder(d=3, h=30);
+            translate([0, 0, 30]) cylinder(d1=6, d2=0, h=10);
+            translate([0, 0, 45]) rotate([90, 0, 90]) linear_extrude(1) text("+X", size=8, halign="center");
+        }
+        translate([outer_length/2, outer_width + 20, 0]) {
+            cylinder(d=3, h=30);
+            translate([0, 0, 30]) cylinder(d1=6, d2=0, h=10);
+            translate([0, 0, 45]) rotate([90, 0, 0]) linear_extrude(1) text("+Y", size=8, halign="center");
+        }
+    }
+}
+
+// Render based on part selection
+if (part == "body" || part == "all") {
+    enclosure_body();
+}
+
+if (part == "lid" || part == "all") {
+    translate([0, outer_width * 2 + 20, 0])
+        lid_for_print();
+}
+
+if (part == "assembled") {
+    enclosure_body();
+    lid_assembled();
+    orientation_labels();
+}
+
+if (part == "labeled") {
+    enclosure_body();
+    orientation_labels();
+}
+
+// Info output
+echo("Enclosure outer dimensions:", outer_length, "x", outer_width, "x", outer_height + wall);
+echo("Total height with lid:", outer_height + wall);
