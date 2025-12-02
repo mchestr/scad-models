@@ -294,7 +294,7 @@ module lid() {
 
     // Honeycomb vent area - centered
     vent_width = outer_width * vent_coverage;
-    vent_length = outer_length * 0.7;  // 70% of length
+    vent_length = outer_length * 0.5;  // 50% of length
     vent_start_x = (outer_length - vent_length) / 2;
     vent_start_y = (outer_width - vent_width) / 2;
 
