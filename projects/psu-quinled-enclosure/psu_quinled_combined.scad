@@ -107,35 +107,13 @@ module standoff(outer_d, inner_d, height, fillet_r=1.5) {
     }
 }
 
-// Corner screw boss (square with fillets, connects to walls)
-module corner_screw_boss(size, screw_d, height, corner, fillet_r=2) {
-    // corner: 0=front-left, 1=front-right, 2=back-left, 3=back-right
-    // Fillets on exposed edges (not touching walls) and base
+// Corner screw boss (simple square pillar)
+module corner_screw_boss(size, screw_d, height, corner) {
     difference() {
-        union() {
-            cube([size, size, height]);
-            // Base fillet on exposed edges based on corner position
-            if (corner == 0) {
-                // Front-left: exposed edges at +X and +Y
-                translate([size, 0, 0]) rotate([0, 0, 90]) internal_fillet(size, fillet_r);
-                translate([0, size, 0]) internal_fillet(size, fillet_r);
-            } else if (corner == 1) {
-                // Front-right: exposed edges at +X and -Y (which is at Y=0 in local coords)
-                translate([size, 0, 0]) rotate([0, 0, 90]) internal_fillet(size, fillet_r);
-                translate([size, 0, 0]) rotate([0, 0, 180]) internal_fillet(size, fillet_r);
-            } else if (corner == 2) {
-                // Back-left: exposed edges at -X and +Y
-                translate([0, size, 0]) internal_fillet(size, fillet_r);
-                rotate([0, 0, -90]) internal_fillet(size, fillet_r);
-            } else {
-                // Back-right: exposed edges at -X and -Y
-                translate([size, 0, 0]) rotate([0, 0, 180]) internal_fillet(size, fillet_r);
-                rotate([0, 0, -90]) internal_fillet(size, fillet_r);
-            }
-        }
-        // Screw hole in center of boss (starts above floor, doesn't cut through)
-        translate([size/2, size/2, 0])
-            cylinder(d=screw_d, h=height + 1);
+        cube([size, size, height]);
+        // Screw hole in center of boss (starts 1mm up to ensure solid floor contact)
+        translate([size/2, size/2, 1])
+            cylinder(d=screw_d, h=height);
     }
 }
 
