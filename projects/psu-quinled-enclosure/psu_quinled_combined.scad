@@ -31,19 +31,19 @@ quinled_standoff_dia = 6;
 quinled_standoff_height = 6;
 
 /* [Enclosure Settings] */
-clearance = 5;  // General clearance around components
-terminal_clearance = 15;  // Extra space at back for PSU terminal wiring
-wall = 5;           // Increased for stronger lid groove walls
+clearance = 3;  // General clearance around components (reduced for space)
+terminal_clearance = 10;  // Extra space at back for PSU terminal wiring
+wall = 4;           // Wall thickness (2mm remains after groove)
 lid_tolerance = 0.3;
 chamfer_size = 3;  // Corner chamfer size
 
 /* [Sliding Lid] */
 rail_height = 4;    // Height of the rail/groove
-rail_depth = 2.5;   // How far rail projects into groove (leaves 2.5mm wall)
+rail_depth = 2;     // How far rail projects into groove (leaves 2mm wall)
 rail_tolerance = 0.2;  // Sliding clearance
 
 /* [Layout - Side by Side] */
-gap_between = 5;  // Gap between PSU and QuinLED section
+gap_between = 3;  // Gap between PSU and QuinLED section (reduced for space)
 divider_slit_width = 30;  // Slit in divider for power cables
 divider_slit_height = 25; // Depth of U-slit from top
 
