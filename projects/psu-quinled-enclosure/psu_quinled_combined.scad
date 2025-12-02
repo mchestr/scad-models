@@ -4,7 +4,7 @@
 
 /* [Part Selection] */
 // Which part to render
-part = "all"; // [body,lid,all,assembled,labeled]
+part = "all"; // [body,lid,all,assembled]
 
 /* [PSU Dimensions] */
 psu_length = 215.9;  // 8.5 inches
@@ -19,8 +19,8 @@ psu_screw_head_dia = 8;  // M4 screw head
 
 /* [PSU Fan] */
 fan_diameter = 60;
-fan_from_front = 168;  // X offset from front of PSU (mirrored: 215.9 - 48)
-fan_from_left = 40;    // Y offset from left edge of PSU (mirrored: 115 - 75)
+fan_from_front = 48;   // X offset from front of PSU
+fan_from_left = 75;    // Y offset from left edge of PSU
 
 /* [QuinLED Board] */
 quinled_length = 100;
@@ -369,42 +369,6 @@ module lid_assembled() {
         lid();
 }
 
-// Debug orientation labels
-module orientation_labels() {
-    color("red") {
-        translate([0, outer_width/2, outer_height + 10])
-            rotate([90, 0, 90])
-                linear_extrude(1)
-                    text("FRONT (X=0)", size=8, halign="center");
-        translate([outer_length, outer_width/2, outer_height + 10])
-            rotate([90, 0, -90])
-                linear_extrude(1)
-                    text("BACK (X=max)", size=8, halign="center");
-    }
-    color("green") {
-        translate([outer_length/2, 0, outer_height + 10])
-            rotate([90, 0, 0])
-                linear_extrude(1)
-                    text("LEFT/PSU (Y=0)", size=8, halign="center");
-        translate([outer_length/2, outer_width, outer_height + 10])
-            rotate([90, 0, 180])
-                linear_extrude(1)
-                    text("RIGHT/QUINLED (Y=max)", size=8, halign="center");
-    }
-    color("blue") {
-        translate([outer_length + 20, outer_width/2, 0]) {
-            cylinder(d=3, h=30);
-            translate([0, 0, 30]) cylinder(d1=6, d2=0, h=10);
-            translate([0, 0, 45]) rotate([90, 0, 90]) linear_extrude(1) text("+X", size=8, halign="center");
-        }
-        translate([outer_length/2, outer_width + 20, 0]) {
-            cylinder(d=3, h=30);
-            translate([0, 0, 30]) cylinder(d1=6, d2=0, h=10);
-            translate([0, 0, 45]) rotate([90, 0, 0]) linear_extrude(1) text("+Y", size=8, halign="center");
-        }
-    }
-}
-
 // Render based on part selection
 if (part == "body" || part == "all") {
     enclosure_body();
@@ -418,12 +382,6 @@ if (part == "lid" || part == "all") {
 if (part == "assembled") {
     enclosure_body();
     lid_assembled();
-    orientation_labels();
-}
-
-if (part == "labeled") {
-    enclosure_body();
-    orientation_labels();
 }
 
 // Info output
