@@ -3,7 +3,7 @@
 include <config.scad>
 
 // --- Settings ---
-show_mockups = true; // Set to false to hide the PSU/QuinLED ghosts
+show_mockups = false; // Set to false to hide the PSU/QuinLED ghosts
 
 // Push PSU back, but ensure we leave room for the terminals at the back
 // We position it so the back of the PSU body leaves exactly 'terminal_clearance' space
