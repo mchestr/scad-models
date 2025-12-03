@@ -78,7 +78,7 @@ module enclosure_body() {
 
             // Right Side: Antenna (Teardrop)
             translate([outer_length - wall - antenna_offset_from_back, outer_width - wall - 1, outer_height - antenna_offset_from_top])
-                rotate([0, 0, -90]) teardrop_h(antenna_dia, wall + 2);
+                rotate([0, 0, 90]) teardrop_h(antenna_dia, wall + 2);
         }
 
         // --- Additive Parts ---
