@@ -12,6 +12,9 @@ grommet_flange_thickness = 2;
 // Body
 enclosure_body();
 
+// Mockups (PSU, QuinLED)
+mockups();
+
 // Lid in assembled position
 translate([0, 0, outer_height])
     lid();
